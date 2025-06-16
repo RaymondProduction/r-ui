@@ -1,5 +1,9 @@
 use libloading::{Library, Symbol};
-use std::{ffi::CString, os::raw::c_char};
+use std::ffi::{CString, c_char};
+
+extern "C" fn on_button_pressed() {
+    println!("✅ Button was pressed in Swift!");
+}
 
 fn main() {
     let lib_path = "./native/libMacUIBridge.dylib";
@@ -9,13 +13,20 @@ fn main() {
             .expect("Failed to load dylib")
     };
 
-    let message = CString::new("Hello from Rust! Raymond 🎯").unwrap();
-
     unsafe {
-        let show_window_with_text: Symbol<unsafe extern "C" fn(*const c_char)> =
-            lib.get(b"show_mac_window_with_text")
-               .expect("❌ Function show_mac_window not found");
+        // register callback
+        let register: Symbol<unsafe extern "C" fn(cb: extern "C" fn())> =
+            lib.get(b"register_callback")
+                .expect("Function register_callback not found");
 
-        show_window_with_text(message.as_ptr());
+        register(on_button_pressed);
+
+        // call window
+        let show: Symbol<unsafe extern "C" fn(*const c_char)> =
+            lib.get(b"show_mac_window_with_text")
+                .expect("Function show_mac_window_with_text not found");
+
+        let message = CString::new("Press the button below 👇").unwrap();
+        show(message.as_ptr());
     }
 }
