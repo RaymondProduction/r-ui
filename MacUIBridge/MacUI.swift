@@ -7,8 +7,9 @@
 import AppKit
 
 @MainActor
-@_cdecl("show_mac_window")
-public func show_mac_window() {
+@_cdecl("show_mac_window_with_text")
+public func show_mac_window_with_text(_ c_str: UnsafePointer<CChar>) {
+    let text = String(cString: c_str)
 
     let app = NSApplication.shared
     app.setActivationPolicy(.regular)
@@ -19,8 +20,9 @@ public func show_mac_window() {
         backing: .buffered,
         defer: false
     )
-    window.title = "Hello from macOS"
-    let label = NSTextField(labelWithString: "This window was called from Rust 🦀")
+    window.title = "Message from Rust"
+    
+    let label = NSTextField(labelWithString: text)
     label.frame = NSRect(x: 40, y: 80, width: 300, height: 40)
     window.contentView?.addSubview(label)
     window.makeKeyAndOrderFront(nil)
