@@ -11,11 +11,20 @@ import ObjectiveC
 @MainActor
 final class RustBridge {
     static var buttonCallback: (@convention(c) (Int32) -> Void)? = nil
+    static var buttonMap: [Int32: NSButton] = [:]
 
     @objc static func handleButton(_ sender: NSButton) {
         let id = Int32(sender.tag)
         buttonCallback?(id)
     }
+}
+
+@MainActor
+@_cdecl("update_button_title")
+public func update_button_title(_ id: Int32, _ c_str: UnsafePointer<CChar>) {
+    let newTitle = String(cString: c_str)
+    guard let button = RustBridge.buttonMap[id] else { return }
+    button.title = newTitle
 }
 
 // Global function for FFI (Foreign Function Interface) to register the callback from Rust
@@ -59,6 +68,7 @@ public func show_window_with_buttons(
             action: #selector(RustBridge.handleButton(_:))
         )
         button.tag = Int(ids[i])
+        RustBridge.buttonMap[ids[i]] = button
         button.frame = NSRect(x: 100, y: 40 * i + 10, width: 200, height: 30)
         window.contentView?.addSubview(button)
     }
